@@ -1,71 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Library Outreach Events</title>
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #calendar { max-width: 900px; margin: 0 auto; }
-    .fc-event-title { font-weight: bold; }
-  </style>
-</head>
-<body>
-  <h1>Library Outreach Events</h1>
-  <div id="calendar"></div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const calendarEl = document.getElementById('calendar');
-
-      const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        eventClick: function(info) {
-          const event = info.event.extendedProps;
-          const detailMessage = `
-            <b>${info.event.title}</b><br><br>
-            📅 Date: ${info.event.start.toDateString()}<br>
-            ⏰ Time: ${event.time || 'N/A'}<br>
-            📍 Location: ${event.location || 'N/A'}<br>
-            👩‍💼 Library Staff: ${event.libraryStaff || 'N/A'}<br>
-            🧾 Notes: ${event.notes || 'None'}<br><br>
-            <a href="${event.signup}" target="_blank">✅ Sign Up</a>
-          `;
-          const popup = document.createElement('div');
-          popup.innerHTML = detailMessage;
-          popup.style = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000;";
-          document.body.appendChild(popup);
-          popup.addEventListener('click', () => popup.remove());
-        }
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+  </head>
+  <body>
+    <div id="calendar"></div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          events: [
+            {
+              title: 'Test Event',
+              start: '2025-05-10'
+            }
+          ]
+        });
+        calendar.render();
       });
-
-      fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv')
-        .then(response => response.text())
-        .then(csv => {
-          const rows = csv.trim().split('\n').slice(1); // skip header
-          const events = rows.map(row => {
-            const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // handles commas inside quotes
-
-            return {
-              title: cols[2],
-              start: new Date(`${cols[0]}T00:00:00`),
-              extendedProps: {
-                time: cols[1],
-                location: cols[3],
-                libraryStaff: cols[4],
-                circulationStaff: cols[5],
-                notes: cols[6],
-                signup: cols[7]
-              }
-            };
-          });
-
-          calendar.addEventSource(events);
-          calendar.render();
-        })
-        .catch(error => console.error('Error loading CSV:', error));
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
