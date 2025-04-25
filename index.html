@@ -14,9 +14,6 @@
         max-width: 900px;
         margin: 0 auto;
       }
-      .fc-event-title {
-        white-space: normal;
-      }
       .popup {
         background: #fff;
         border: 1px solid #ccc;
@@ -51,11 +48,9 @@
             const events = [];
 
             for (let i = 1; i < lines.length; i++) {
-              const row = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+              const row = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, "").trim());
               const event = {};
-              headers.forEach((h, idx) => {
-                event[h] = row[idx] ? row[idx].replace(/\"/g, '"').trim() : "";
-              });
+              headers.forEach((h, idx) => event[h] = row[idx] || "");
 
               if (!event["DATE"] || !event["EVENT"]) continue;
 
@@ -78,7 +73,7 @@
 
             const calendar = new FullCalendar.Calendar(calendarEl, {
               initialView: "dayGridMonth",
-              events,
+              events: events,
               eventClick: function (info) {
                 const props = info.event.extendedProps;
                 const popup = document.createElement("div");
@@ -86,8 +81,8 @@
                 popup.innerHTML = `
                   <strong>Time:</strong> ${props.time || "N/A"}<br>
                   <strong>Location:</strong> ${props.address || "N/A"}<br>
-                  <strong>Library Staff Needed:</strong> ${props.libStaff || "0"}<br>
-                  <strong>Circulation Staff Needed:</strong> ${props.circStaff || "0"}<br>
+                  <strong>Library Staff:</strong> ${props.libStaff || "0"}<br>
+                  <strong>Circulation Staff:</strong> ${props.circStaff || "0"}<br>
                   <strong>Total Staff Needed:</strong> ${props.staffNeeded}<br>
                   <strong>Notes:</strong> ${props.notes || "None"}<br>
                   ${props.signUp ? `<a href="${props.signUp}" target="_blank">Sign up here</a>` : ""}
