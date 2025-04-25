@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Library Outreach Events</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.75rem;
+      text-align: left;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    @media (max-width: 600px) {
+      table, th, td {
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Library Outreach Events</h1>
+  <table id="eventsTable"></table>
+
+  <script>
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv";
+
+    fetch(csvUrl)
+      .then(response => response.text())
+      .then(data => {
+        const rows = data.trim().split('\n').map(row => row.split(','));
+        let html = '<tr>' + rows[0].map(h => `<th>${h.trim()}</th>`).join('') + '</tr>';
+        rows.slice(1).forEach(row => {
+          html += '<tr>' + row.map(cell => `<td>${cell.trim()}</td>`).join('') + '</tr>';
+        });
+        document.getElementById('eventsTable').innerHTML = html;
+      })
+      .catch(error => {
+        document.getElementById('eventsTable').innerHTML = '<tr><td colspan="5">Error loading data. Please try again later.</td></tr>';
+        console.error('CSV fetch error:', error);
+      });
+  </script>
+</body>
+</html>
