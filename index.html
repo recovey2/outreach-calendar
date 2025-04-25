@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Library Outreach Events</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 1rem;
+      }
+      #calendar {
+        max-width: 900px;
+        margin: 40px auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Library Outreach Events</h1>
+    <div id="calendar"></div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+
+        fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv')
+          .then(response => response.text())
+          .then(data => {
+            const events = [];
+            const rows = data.trim().split('\n').slice(1); // Skip header
+
+            rows.forEach(row => {
+              const cols = row.split(',');
+              if (cols.length >= 6) {
+                const [date, time, title, address, libStaff, circStaff] = cols.map(cell => cell.trim());
+                const [month, day, year] = date.split('/');
+                const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+                events.push({
+                  title: title,
+                  start: isoDate,
+                  extendedProps: {
+                    time: time,
+                    address: address,
+                    libStaff: libStaff,
+                    circStaff: circStaff
+                  }
+                });
+              }
+            });
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+              initialView: 'dayGridMonth',
+              events: events,
+              eventClick: function(info) {
+                const props = info.event.extendedProps;
+                alert(
+                  `${info.event.title}\n\n` +
+                  `Date: ${info.event.start.toLocaleDateString()}\n` +
+                  `Time: ${props.time}\n` +
+                  `Location: ${props.address}\n` +
+                  `Library Staff: ${props.libStaff}\n` +
+                  `Circulation Staff: ${props.circStaff}`
+                );
+              }
+            });
+
+            calendar.render();
+          });
+      });
+    </script>
+  </body>
+</html>
