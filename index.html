@@ -3,16 +3,21 @@
   <head>
     <title>Library Outreach Events</title>
     <meta charset="UTF-8" />
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
         padding: 20px;
+        background: #f5f5f5;
       }
       #calendar {
         max-width: 900px;
         margin: 0 auto;
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
       .popup {
         background: #fff;
@@ -23,9 +28,10 @@
         left: 50%;
         transform: translate(-50%, -20%);
         z-index: 9999;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         max-width: 90%;
         width: 400px;
+        border-radius: 10px;
       }
       .popup button {
         margin-top: 10px;
@@ -41,20 +47,25 @@
         const calendarEl = document.getElementById("calendar");
 
         fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv")
-          .then(response => response.text())
-          .then(csv => {
+          .then((response) => response.text())
+          .then((csv) => {
             const lines = csv.trim().split("\n");
-            const headers = lines[0].split(",").map(h => h.trim());
+            const headers = lines[0].split(",").map((h) => h.trim());
             const events = [];
 
             for (let i = 1; i < lines.length; i++) {
-              const row = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, "").trim());
+              const row = lines[i]
+                .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+                .map((cell) => cell.replace(/^"|"$/g, "").trim());
+
               const event = {};
-              headers.forEach((h, idx) => event[h] = row[idx] || "");
+              headers.forEach((h, idx) => (event[h] = row[idx] || ""));
 
               if (!event["DATE"] || !event["EVENT"]) continue;
 
-              const staffNeeded = (parseInt(event["LIBRARY STAFF"]) || 0) + (parseInt(event["CIRCULATION STAFF"]) || 0);
+              const staffNeeded =
+                (parseInt(event["LIBRARY STAFF"]) || 0) +
+                (parseInt(event["CIRCULATION STAFF"]) || 0);
 
               events.push({
                 title: event["EVENT"],
@@ -66,8 +77,8 @@
                   circStaff: event["CIRCULATION STAFF"],
                   notes: event["NOTES"],
                   signUp: event["SIGN UP"],
-                  staffNeeded: staffNeeded
-                }
+                  staffNeeded: staffNeeded,
+                },
               });
             }
 
@@ -89,7 +100,7 @@
                   <br><br><button onclick="this.parentElement.remove()">Close</button>
                 `;
                 document.body.appendChild(popup);
-              }
+              },
             });
 
             calendar.render();
