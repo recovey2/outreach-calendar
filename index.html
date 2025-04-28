@@ -82,13 +82,11 @@
             if (!row['EVENT'] || !row['DATE']) return null;
 
             const date = formatDate(row['DATE'].trim());
-            const time = row['EVENT TIME']?.trim();
-            const datetime = (date && time) ? `${date}T${convertTo24Hour(time)}` : date;
-
             return {
               title: row['EVENT'].trim(),
-              start: datetime,
+              start: date, // Only the date, no time needed for calendar view
               extendedProps: {
+                time: row['EVENT TIME']?.trim(),
                 address: row['ADDRESS']?.trim(),
                 libStaff: row['LIBRARY STAFF']?.trim(),
                 circStaff: row['CIRCULATION STAFF']?.trim(),
@@ -105,12 +103,12 @@
               modalTitle.textContent = info.event.title;
               modalDetails.innerHTML = `
                 <strong>Date:</strong> ${info.event.start.toLocaleDateString()}<br/>
-                <strong>Time:</strong> ${info.event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'N/A'}<br/>
+                <strong>Event Time:</strong> ${info.event.extendedProps.time || 'N/A'}<br/>
                 <strong>Address:</strong> ${info.event.extendedProps.address || 'N/A'}<br/>
                 <strong>Library Staff Needed:</strong> ${info.event.extendedProps.libStaff || 'N/A'}<br/>
                 <strong>Circulation Staff Needed:</strong> ${info.event.extendedProps.circStaff || 'N/A'}<br/>
                 <strong>Notes:</strong> ${info.event.extendedProps.notes || 'None'}<br/>
-                ${info.event.extendedProps.signupLink ? `<a href="${info.event.extendedProps.signupLink}" class="signup-link" target="_blank">Sign Up Here</a>` : ''}
+                ${info.event.extendedProps.signupLink ? `<br/><a href="${info.event.extendedProps.signupLink}" class="signup-link" target="_blank">📋 Sign Up Here</a>` : ''}
               `;
               modal.style.display = 'block';
             }
@@ -126,20 +124,6 @@
         }
       }
 
-      // Converts "10:00 AM" → "10:00", "1:30 PM" → "13:30"
-      function convertTo24Hour(timeStr) {
-        if (!timeStr) return '00:00';
-        const parts = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-        if (!parts) return '00:00';
-        let hours = parseInt(parts[1], 10);
-        const minutes = parts[2];
-        const ampm = parts[3].toUpperCase();
-        if (ampm === 'PM' && hours < 12) hours += 12;
-        if (ampm === 'AM' && hours === 12) hours = 0;
-        return `${hours.toString().padStart(2, '0')}:${minutes}`;
-      }
-
-      // Fixes if Google Sheet date is in MM/DD/YYYY instead of YYYY-MM-DD
       function formatDate(dateStr) {
         if (!dateStr.includes('-') && dateStr.includes('/')) {
           const [month, day, year] = dateStr.split('/');
