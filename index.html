@@ -5,7 +5,7 @@
     <title>Library Outreach Events</title>
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script> <!-- PapaParse added -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script> <!-- PapaParse -->
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -39,6 +39,18 @@
         font-size: 20px;
         cursor: pointer;
       }
+      a.signup-link {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 10px 15px;
+        background-color: #007BFF;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+      }
+      a.signup-link:hover {
+        background-color: #0056b3;
+      }
     </style>
   </head>
   <body>
@@ -66,16 +78,17 @@
           header: true,
           complete: function(results) {
             const events = results.data.map(row => {
-              if (!row['Event Name'] || !row['Date']) return null; // adjust based on actual column names
+              if (!row['EVENT'] || !row['DATE']) return null;
               return {
-                title: row['Event Name'].trim(),
-                start: row['Date'].trim(),
+                title: row['EVENT'].trim(),
+                start: row['DATE'].trim(),
                 extendedProps: {
-                  time: row['Time']?.trim(),
-                  address: row['Address']?.trim(),
-                  attendees: row['Expected Attendees']?.trim(),
-                  libStaff: row['Library Staff Needed']?.trim(),
-                  circStaff: row['Circulation Staff Needed']?.trim()
+                  time: row['EVENT TIME']?.trim(),
+                  address: row['ADDRESS']?.trim(),
+                  libStaff: row['LIBRARY STAFF']?.trim(),
+                  circStaff: row['CIRCULATION STAFF']?.trim(),
+                  notes: row['NOTES']?.trim(),
+                  signupLink: row['SIGN-UP LINK']?.trim()
                 }
               };
             }).filter(event => event !== null);
@@ -89,9 +102,10 @@
                   <strong>Date:</strong> ${info.event.start.toLocaleDateString()}<br/>
                   <strong>Time:</strong> ${info.event.extendedProps.time || 'N/A'}<br/>
                   <strong>Address:</strong> ${info.event.extendedProps.address || 'N/A'}<br/>
-                  <strong>Expected Attendees:</strong> ${info.event.extendedProps.attendees || 'N/A'}<br/>
                   <strong>Library Staff Needed:</strong> ${info.event.extendedProps.libStaff || 'N/A'}<br/>
-                  <strong>Circulation Staff Needed:</strong> ${info.event.extendedProps.circStaff || 'N/A'}
+                  <strong>Circulation Staff Needed:</strong> ${info.event.extendedProps.circStaff || 'N/A'}<br/>
+                  <strong>Notes:</strong> ${info.event.extendedProps.notes || 'None'}<br/>
+                  ${info.event.extendedProps.signupLink ? `<a href="${info.event.extendedProps.signupLink}" class="signup-link" target="_blank">Sign Up Here</a>` : ''}
                 `;
                 modal.style.display = 'block';
               }
