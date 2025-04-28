@@ -14,15 +14,52 @@
         max-width: 900px;
         margin: 40px auto;
       }
+      /* Modal styling */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 10;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.5);
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: 15% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 500px;
+      }
+      .close {
+        float: right;
+        font-size: 20px;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
     <h1>Library Outreach Events</h1>
     <div id="calendar"></div>
 
+    <!-- Modal for event details -->
+    <div id="eventModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="document.getElementById('eventModal').style.display='none'">&times;</span>
+        <h2 id="modalTitle"></h2>
+        <p id="modalDetails"></p>
+      </div>
+    </div>
+
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('calendar');
+        const modal = document.getElementById('eventModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDetails = document.getElementById('modalDetails');
 
         fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv')
           .then(response => response.text())
@@ -31,19 +68,50 @@
             const rows = data.split('\n').slice(1); // skip header
             rows.forEach(row => {
               const cols = row.split(',');
-              const title = cols[0];
-              const date = cols[1];
+
+              const title = cols[0]?.trim();
+              const date = cols[1]?.trim();
+              const description = cols[2]?.trim();
+              const staffNeeded = cols[3]?.trim();
+              const staffType = cols[4]?.trim();
+
               if (title && date) {
-                events.push({ title, start: date });
+                events.push({
+                  title,
+                  start: date,
+                  extendedProps: {
+                    description,
+                    staffNeeded,
+                    staffType
+                  }
+                });
               }
             });
 
             const calendar = new FullCalendar.Calendar(calendarEl, {
               initialView: 'dayGridMonth',
-              events: events
+              events: events,
+              eventClick: function(info) {
+                modalTitle.textContent = info.event.title;
+                modalDetails.innerHTML = `
+                  <strong>Date:</strong> ${info.event.start.toLocaleDateString()}<br/>
+                  <strong>Description:</strong> ${info.event.extendedProps.description || 'N/A'}<br/>
+                  <strong>Staff Needed:</strong> ${info.event.extendedProps.staffNeeded || 'N/A'}<br/>
+                  <strong>Staff Type:</strong> ${info.event.extendedProps.staffType || 'N/A'}
+                `;
+                modal.style.display = 'block';
+              }
             });
+
             calendar.render();
           });
+
+        // Close modal on click outside
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        }
       });
     </script>
   </body>
