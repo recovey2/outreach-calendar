@@ -1,138 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Library Outreach Events</title>
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css" rel="stylesheet" />
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 40px;
-        padding: 0;
-        background: #f9f9f9;
+<head>
+  <meta charset="UTF-8">
+  <title>Library Outreach Events</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.75rem;
+      text-align: left;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    @media (max-width: 600px) {
+      table, th, td {
+        font-size: 0.85rem;
       }
+    }
+  </style>
+</head>
+<body>
+  <h1>Library Outreach Events</h1>
+  <table id="eventsTable"></table>
 
-      h1 {
-        text-align: center;
-        margin-bottom: 40px;
-        font-size: 2rem;
-      }
+  <script>
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv";
 
-      #calendar {
-        max-width: 900px;
-        margin: 0 auto;
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-      }
-
-      .popup {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        padding: 20px;
-        z-index: 9999;
-        width: 90%;
-        max-width: 400px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      }
-
-      .popup a {
-        color: #0077cc;
-        text-decoration: underline;
-      }
-
-      .popup button {
-        margin-top: 15px;
-        background: #0077cc;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 6px;
-        cursor: pointer;
-      }
-
-      .popup button:hover {
-        background: #005fa3;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Library Outreach Events</h1>
-    <div id="calendar"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const calendarEl = document.getElementById("calendar");
-
-        fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv")
-          .then((response) => response.text())
-          .then((csv) => {
-            const rows = csv.trim().split("\n").map(row =>
-              row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)?.map(cell => cell.replace(/^"|"$/g, "").trim())
-            );
-
-            const headers = rows[0];
-            const events = [];
-
-            for (let i = 1; i < rows.length; i++) {
-              const row = rows[i];
-              if (!row || row.length < headers.length) continue;
-
-              const event = {};
-              headers.forEach((h, idx) => event[h.toUpperCase()] = row[idx] || "");
-
-              if (!event["DATE"] || !event["EVENT"]) continue;
-
-              const staffNeeded =
-                (parseInt(event["LIBRARY STAFF"]) || 0) +
-                (parseInt(event["CIRCULATION STAFF"]) || 0);
-
-              events.push({
-                title: event["EVENT"],
-                start: event["DATE"],
-                extendedProps: {
-                  time: event["EVENT TIME"],
-                  address: event["ADDRESS"],
-                  libStaff: event["LIBRARY STAFF"],
-                  circStaff: event["CIRCULATION STAFF"],
-                  notes: event["NOTES"],
-                  signUp: event["SIGN UP"],
-                  staffNeeded: staffNeeded,
-                },
-              });
-            }
-
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-              initialView: "dayGridMonth",
-              events: events,
-              eventClick: function (info) {
-                const props = info.event.extendedProps;
-                const popup = document.createElement("div");
-                popup.className = "popup";
-                popup.innerHTML = `
-                  <strong>Time:</strong> ${props.time || "N/A"}<br>
-                  <strong>Location:</strong> ${props.address || "N/A"}<br>
-                  <strong>Library Staff:</strong> ${props.libStaff || "0"}<br>
-                  <strong>Circulation Staff:</strong> ${props.circStaff || "0"}<br>
-                  <strong>Total Staff Needed:</strong> ${props.staffNeeded}<br>
-                  <strong>Notes:</strong> ${props.notes || "None"}<br>
-                  ${props.signUp ? `<a href="${props.signUp}" target="_blank">Sign up here</a>` : ""}
-                  <br><br><button onclick="this.parentElement.remove()">Close</button>
-                `;
-                document.body.appendChild(popup);
-              },
-            });
-
-            calendar.render();
-          });
+    fetch(csvUrl)
+      .then(response => response.text())
+      .then(data => {
+        const rows = data.trim().split('\n').map(row => row.split(','));
+        let html = '<tr>' + rows[0].map(h => `<th>${h.trim()}</th>`).join('') + '</tr>';
+        rows.slice(1).forEach(row => {
+          html += '<tr>' + row.map(cell => `<td>${cell.trim()}</td>`).join('') + '</tr>';
+        });
+        document.getElementById('eventsTable').innerHTML = html;
+      })
+      .catch(error => {
+        document.getElementById('eventsTable').innerHTML = '<tr><td colspan="5">Error loading data. Please try again later.</td></tr>';
+        console.error('CSV fetch error:', error);
       });
-    </script>
-  </body>
+  </script>
+</body>
 </html>
