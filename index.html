@@ -14,7 +14,6 @@
         max-width: 900px;
         margin: 40px auto;
       }
-      /* Modal styling */
       .modal {
         display: none;
         position: fixed;
@@ -28,7 +27,7 @@
       }
       .modal-content {
         background-color: #fff;
-        margin: 15% auto;
+        margin: 10% auto;
         padding: 20px;
         border-radius: 8px;
         width: 80%;
@@ -45,7 +44,7 @@
     <h1>Library Outreach Events</h1>
     <div id="calendar"></div>
 
-    <!-- Modal for event details -->
+    <!-- Modal -->
     <div id="eventModal" class="modal">
       <div class="modal-content">
         <span class="close" onclick="document.getElementById('eventModal').style.display='none'">&times;</span>
@@ -65,24 +64,28 @@
           .then(response => response.text())
           .then(data => {
             const events = [];
-            const rows = data.split('\n').slice(1); // skip header
+            const rows = data.split('\n').slice(1); // skip header row
             rows.forEach(row => {
               const cols = row.split(',');
 
-              const title = cols[0]?.trim();
-              const date = cols[1]?.trim();
-              const description = cols[2]?.trim();
-              const staffNeeded = cols[3]?.trim();
-              const staffType = cols[4]?.trim();
+              const date = cols[0]?.trim();
+              const time = cols[1]?.trim();
+              const title = cols[2]?.trim();
+              const address = cols[3]?.trim();
+              const attendees = cols[4]?.trim();
+              const libStaff = cols[5]?.trim();
+              const circStaff = cols[6]?.trim();
 
               if (title && date) {
                 events.push({
                   title,
                   start: date,
                   extendedProps: {
-                    description,
-                    staffNeeded,
-                    staffType
+                    time,
+                    address,
+                    attendees,
+                    libStaff,
+                    circStaff
                   }
                 });
               }
@@ -95,9 +98,11 @@
                 modalTitle.textContent = info.event.title;
                 modalDetails.innerHTML = `
                   <strong>Date:</strong> ${info.event.start.toLocaleDateString()}<br/>
-                  <strong>Description:</strong> ${info.event.extendedProps.description || 'N/A'}<br/>
-                  <strong>Staff Needed:</strong> ${info.event.extendedProps.staffNeeded || 'N/A'}<br/>
-                  <strong>Staff Type:</strong> ${info.event.extendedProps.staffType || 'N/A'}
+                  <strong>Time:</strong> ${info.event.extendedProps.time || 'N/A'}<br/>
+                  <strong>Address:</strong> ${info.event.extendedProps.address || 'N/A'}<br/>
+                  <strong>Expected Attendees:</strong> ${info.event.extendedProps.attendees || 'N/A'}<br/>
+                  <strong>Library Staff Needed:</strong> ${info.event.extendedProps.libStaff || 'N/A'}<br/>
+                  <strong>Circulation Staff Needed:</strong> ${info.event.extendedProps.circStaff || 'N/A'}
                 `;
                 modal.style.display = 'block';
               }
@@ -106,7 +111,6 @@
             calendar.render();
           });
 
-        // Close modal on click outside
         window.onclick = function(event) {
           if (event.target == modal) {
             modal.style.display = "none";
