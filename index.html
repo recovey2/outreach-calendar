@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8" />
   <title>Library Outreach Events</title>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
@@ -24,7 +24,7 @@
       width: 100%;
       height: 100%;
       overflow: auto;
-      background-color: rgba(0,0,0,0.5);
+      background-color: rgba(0, 0, 0, 0.5);
     }
     .modal-content {
       background-color: #fff;
@@ -51,10 +51,14 @@
     a.signup-link:hover {
       background-color: #0056b3;
     }
+    /* 🔔 Events that need staff */
+    .fc-event.needs-staff {
+      font-weight: bold;
+      color: #c62828 !important;
+    }
   </style>
 </head>
 <body>
-
   <h1>Library Outreach Events</h1>
   <div id="calendar"></div>
 
@@ -74,6 +78,15 @@
       const modalTitle = document.getElementById('modalTitle');
       const modalDetails = document.getElementById('modalDetails');
 
+      function formatDate(input) {
+        const parts = input.split('/');
+        if (parts.length === 3) {
+          const [month, day, year] = parts;
+          return `${year.trim()}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+        return input;
+      }
+
       Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv', {
         download: true,
         header: true,
@@ -82,17 +95,24 @@
             if (!row['EVENT'] || !row['DATE']) return null;
 
             const date = formatDate(row['DATE'].trim());
+            const libStaff = row['LIBRARY STAFF']?.trim();
+            const circStaff = row['CIRCULATION STAFF']?.trim();
+
+            const needsStaff = !libStaff || libStaff.toLowerCase().includes('tbd') ||
+                               !circStaff || circStaff.toLowerCase().includes('tbd');
+
             return {
-              title: row['EVENT'].trim(),
-              start: date, // Only the date, no time needed for calendar view
+              title: `${needsStaff ? '🔔 ' : ''}${row['EVENT'].trim()}`,
+              start: date,
               extendedProps: {
                 time: row['EVENT TIME']?.trim(),
                 address: row['ADDRESS']?.trim(),
-                libStaff: row['LIBRARY STAFF']?.trim(),
-                circStaff: row['CIRCULATION STAFF']?.trim(),
+                libStaff,
+                circStaff,
                 notes: row['NOTES']?.trim(),
                 signupLink: row['SIGN-UP LINK']?.trim()
-              }
+              },
+              classNames: needsStaff ? ['needs-staff'] : []
             };
           }).filter(event => event !== null);
 
@@ -108,7 +128,9 @@
                 <strong>Library Staff Needed:</strong> ${info.event.extendedProps.libStaff || 'N/A'}<br/>
                 <strong>Circulation Staff Needed:</strong> ${info.event.extendedProps.circStaff || 'N/A'}<br/>
                 <strong>Notes:</strong> ${info.event.extendedProps.notes || 'None'}<br/>
-                ${info.event.extendedProps.signupLink ? `<br/><a href="${info.event.extendedProps.signupLink}" class="signup-link" target="_blank">📋 Sign Up Here</a>` : ''}
+                ${info.event.extendedProps.signupLink && info.event.extendedProps.signupLink.trim() !== '' ? `
+                  <br/><a href="${info.event.extendedProps.signupLink}" class="signup-link" target="_blank">📋 Sign Up Here</a>
+                ` : ''}
               `;
               modal.style.display = 'block';
             }
@@ -123,16 +145,7 @@
           modal.style.display = "none";
         }
       }
-
-      function formatDate(dateStr) {
-        if (!dateStr.includes('-') && dateStr.includes('/')) {
-          const [month, day, year] = dateStr.split('/');
-          return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-        }
-        return dateStr;
-      }
     });
   </script>
-
 </body>
 </html>
