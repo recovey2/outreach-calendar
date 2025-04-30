@@ -5,15 +5,23 @@
   <title>Library Outreach Events</title>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f7f9fc;
       padding: 1rem;
+    }
+    h1 {
+      text-align: center;
+      color: #1e3a8a;
     }
     #calendar {
       max-width: 900px;
       margin: 40px auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     .modal {
       display: none;
@@ -24,7 +32,7 @@
       width: 100%;
       height: 100%;
       overflow: auto;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0,0,0,0.5);
     }
     .modal-content {
       background-color: #fff;
@@ -33,28 +41,22 @@
       border-radius: 8px;
       width: 80%;
       max-width: 500px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     .close {
       float: right;
       font-size: 20px;
       cursor: pointer;
     }
-    a.signup-link {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 10px 15px;
-      background-color: #007BFF;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-    }
-    a.signup-link:hover {
-      background-color: #0056b3;
-    }
-    /* 🔔 Events that need staff */
-    .fc-event.needs-staff {
+    #modalTitle {
+      font-size: 1.5em;
       font-weight: bold;
-      color: #c62828 !important;
+      color: #1e3a8a;
+      margin-bottom: 10px;
+    }
+    #modalDetails a {
+      color: #0f62fe;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -78,43 +80,55 @@
       const modalTitle = document.getElementById('modalTitle');
       const modalDetails = document.getElementById('modalDetails');
 
-      function formatDate(input) {
-        const parts = input.split('/');
-        if (parts.length === 3) {
-          const [month, day, year] = parts;
-          return `${year.trim()}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      function getColorByEventType(type) {
+        switch ((type || '').trim()) {
+          case 'City Event': return '#1e3a8a';            // Deep Blue
+          case 'Parent/Family School Night': return '#5b21b6'; // Indigo
+          case 'Community Event': return '#0f766e';       // Teal
+          case 'School Visit': return '#166534';          // Green
+          case 'Other Tabling Event': return '#c2410c';   // Orange
+          default: return '#3b82f6';                      // Default Blue
         }
-        return input;
       }
 
-      Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv', {
-        download: true,
-        header: true,
-        complete: function(results) {
-          const events = results.data.map(row => {
-            if (!row['Event'] || !row['Date']) return null;
+      fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv')
+        .then(response => response.text())
+        .then(data => {
+          const events = [];
+          const rows = data.split('\n').slice(1); // Skip header
+          rows.forEach(row => {
+            const cols = row.split(',');
 
-            const date = formatDate(row['Date'].trim());
-            const libStaff = row['Library Staff']?.trim();
-            const circStaff = row['Circulation Staff']?.trim();
+            if (cols.length < 9) return;
 
-            const needsStaff = !libStaff || libStaff.toLowerCase().includes('tbd') ||
-                               !circStaff || circStaff.toLowerCase().includes('tbd');
+            const date = cols[0]?.trim();
+            const time = cols[1]?.trim();
+            const title = cols[2]?.trim();
+            const address = cols[3]?.trim();
+            const libStaff = cols[4]?.trim();
+            const circStaff = cols[5]?.trim();
+            const notes = cols[6]?.trim();
+            const signup = cols[7]?.trim();
+            const type = cols[8]?.trim();
 
-            return {
-              title: `${needsStaff ? '🔔 ' : ''}${row['Event'].trim()}`,
-              start: date,
-              extendedProps: {
-                time: row['Event Time']?.trim(),
-                address: row['Address']?.trim(),
-                libStaff,
-                circStaff,
-                notes: row['Notes']?.trim(),
-                signupLink: row['Sign-up Link']?.trim()
-              },
-              classNames: needsStaff ? ['needs-staff'] : []
-            };
-          }).filter(event => event !== null);
+            if (title && date) {
+              events.push({
+                title,
+                start: date,
+                backgroundColor: getColorByEventType(type),
+                borderColor: getColorByEventType(type),
+                extendedProps: {
+                  time,
+                  address,
+                  libStaff,
+                  circStaff,
+                  notes,
+                  signup,
+                  type
+                }
+              });
+            }
+          });
 
           const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -123,22 +137,20 @@
               modalTitle.textContent = info.event.title;
               modalDetails.innerHTML = `
                 <strong>Date:</strong> ${info.event.start.toLocaleDateString()}<br/>
-                <strong>Event Time:</strong> ${info.event.extendedProps.time || 'N/A'}<br/>
+                <strong>Time:</strong> ${info.event.extendedProps.time || 'N/A'}<br/>
                 <strong>Address:</strong> ${info.event.extendedProps.address || 'N/A'}<br/>
                 <strong>Library Staff Needed:</strong> ${info.event.extendedProps.libStaff || 'N/A'}<br/>
                 <strong>Circulation Staff Needed:</strong> ${info.event.extendedProps.circStaff || 'N/A'}<br/>
                 <strong>Notes:</strong> ${info.event.extendedProps.notes || 'None'}<br/>
-                ${info.event.extendedProps.signupLink ? `
-                  <br/><a href="${info.event.extendedProps.signupLink}" class="signup-link" target="_blank">📋 Sign Up Here</a>
-                ` : ''}
+                <strong>Event Type:</strong> ${info.event.extendedProps.type || 'N/A'}<br/>
+                ${info.event.extendedProps.signup ? `<strong>Sign-up:</strong> <a href="${info.event.extendedProps.signup}" target="_blank">Click here</a>` : ''}
               `;
               modal.style.display = 'block';
             }
           });
 
           calendar.render();
-        }
-      });
+        });
 
       window.onclick = function(event) {
         if (event.target == modal) {
