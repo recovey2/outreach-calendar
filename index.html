@@ -5,24 +5,44 @@
   <title>Library Outreach Events</title>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f7f9fc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+      margin: 0;
       padding: 1rem;
     }
+
     h1 {
       text-align: center;
-      color: #1e3a8a;
+      color: #2c3e50;
     }
+
     #calendar {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 40px auto;
       background-color: white;
-      padding: 20px;
+      padding: 1rem;
       border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
+
+    .fc-event {
+      color: white !important;
+      border: none !important;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .CityEvent { background-color: #1e3a8a !important; }
+    .ParentFamilySchoolNight { background-color: #5b21b6 !important; }
+    .CommunityEvent { background-color: #0f766e !important; }
+    .SchoolVisit { background-color: #166534 !important; }
+    .OtherTablingEvent { background-color: #c2410c !important; }
+    .needs-staff { font-weight: bold; }
+
     .modal {
       display: none;
       position: fixed;
@@ -32,39 +52,95 @@
       width: 100%;
       height: 100%;
       overflow: auto;
-      background-color: rgba(0,0,0,0.5);
+      background-color: rgba(0,0,0,0.6);
     }
+
     .modal-content {
       background-color: #fff;
-      margin: 10% auto;
-      padding: 20px;
-      border-radius: 8px;
-      width: 80%;
-      max-width: 500px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      margin: 8% auto;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
+
     .close {
       float: right;
-      font-size: 20px;
+      font-size: 24px;
+      font-weight: bold;
       cursor: pointer;
     }
+
     #modalTitle {
-      font-size: 1.5em;
-      font-weight: bold;
-      color: #1e3a8a;
+      font-size: 1.4rem;
+      font-weight: 600;
       margin-bottom: 10px;
+      color: #1e3a8a;
     }
-    #modalDetails a {
-      color: #0f62fe;
-      text-decoration: underline;
+
+    #modalDetails {
+      line-height: 1.6;
+      font-size: 0.95rem;
     }
+
+    a.signup-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 18px;
+      background-color: #2563eb;
+      color: white;
+      font-weight: 500;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+
+    a.signup-link:hover {
+      background-color: #1d4ed8;
+    }
+
+    #legend {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.95rem;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+    }
+
+    .CityEventColor { background-color: #1e3a8a; }
+    .ParentFamilySchoolNightColor { background-color: #5b21b6; }
+    .CommunityEventColor { background-color: #0f766e; }
+    .SchoolVisitColor { background-color: #166534; }
+    .OtherTablingEventColor { background-color: #c2410c; }
   </style>
 </head>
 <body>
   <h1>Library Outreach Events</h1>
+
+  <div id="legend">
+    <div class="legend-item"><div class="legend-color CityEventColor"></div> City Event</div>
+    <div class="legend-item"><div class="legend-color ParentFamilySchoolNightColor"></div> Parent/Family School Night</div>
+    <div class="legend-item"><div class="legend-color CommunityEventColor"></div> Community Event</div>
+    <div class="legend-item"><div class="legend-color SchoolVisitColor"></div> School Visit</div>
+    <div class="legend-item"><div class="legend-color OtherTablingEventColor"></div> Other Tabling Event</div>
+  </div>
+
   <div id="calendar"></div>
 
-  <!-- Modal -->
   <div id="eventModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="document.getElementById('eventModal').style.display='none'">&times;</span>
@@ -80,55 +156,55 @@
       const modalTitle = document.getElementById('modalTitle');
       const modalDetails = document.getElementById('modalDetails');
 
-      function getColorByEventType(type) {
-        switch ((type || '').trim()) {
-          case 'City Event': return '#1e3a8a';            // Deep Blue
-          case 'Parent/Family School Night': return '#5b21b6'; // Indigo
-          case 'Community Event': return '#0f766e';       // Teal
-          case 'School Visit': return '#166534';          // Green
-          case 'Other Tabling Event': return '#c2410c';   // Orange
-          default: return '#3b82f6';                      // Default Blue
+      function formatDate(input) {
+        const parts = input.split('/');
+        if (parts.length === 3) {
+          const [month, day, year] = parts;
+          return `${year.trim()}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
         }
+        return input;
       }
 
-      fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv')
-        .then(response => response.text())
-        .then(data => {
-          const events = [];
-          const rows = data.split('\n').slice(1); // Skip header
-          rows.forEach(row => {
-            const cols = row.split(',');
+      function formatClassName(type) {
+        return (type || '').replace(/\s+/g, '').replace(/[^\w]/g, '');
+      }
 
-            if (cols.length < 9) return;
+      Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvbKTHyiMY3-AH_C_izdf_VS0Y5ehl6mFRHGYcBYmmPnOpiykKdLhjdaCjO-1zZ302eF6j9U3fq2Hs/pub?gid=1476389767&single=true&output=csv', {
+        download: true,
+        header: true,
+        complete: function(results) {
+          console.log("Parsed Headers:", Object.keys(results.data[0]));
 
-            const date = cols[0]?.trim();
-            const time = cols[1]?.trim();
-            const title = cols[2]?.trim();
-            const address = cols[3]?.trim();
-            const libStaff = cols[4]?.trim();
-            const circStaff = cols[5]?.trim();
-            const notes = cols[6]?.trim();
-            const signup = cols[7]?.trim();
-            const type = cols[8]?.trim();
+          const events = results.data.map(row => {
+            if (!row['Event'] || !row['Date']) return null;
 
-            if (title && date) {
-              events.push({
-                title,
-                start: date,
-                backgroundColor: getColorByEventType(type),
-                borderColor: getColorByEventType(type),
-                extendedProps: {
-                  time,
-                  address,
-                  libStaff,
-                  circStaff,
-                  notes,
-                  signup,
-                  type
-                }
-              });
-            }
-          });
+            const date = formatDate(row['Date'].trim());
+            const libStaff = row['Library Staff']?.trim();
+            const circStaff = row['Circulation Staff']?.trim();
+            const eventType = row['Event Type']?.trim() || 'Other Tabling Event';
+
+            const needsStaff = !libStaff || libStaff.toLowerCase().includes('tbd') ||
+                               !circStaff || circStaff.toLowerCase().includes('tbd');
+
+            const className = formatClassName(eventType);
+
+            return {
+              title: `${needsStaff ? '🔔 ' : ''}${row['Event'].trim()}`,
+              start: date,
+              extendedProps: {
+                time: row['Event Time']?.trim(),
+                address: row['Address']?.trim(),
+                libStaff,
+                circStaff,
+                notes: row['Notes']?.trim(),
+                signupLink: row['Sign-up Link']?.trim(),
+                eventType
+              },
+              classNames: [className, ...(needsStaff ? ['needs-staff'] : [])]
+            };
+          }).filter(event => event !== null);
+
+          console.log("Loaded Events:", events);
 
           const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -137,20 +213,23 @@
               modalTitle.textContent = info.event.title;
               modalDetails.innerHTML = `
                 <strong>Date:</strong> ${info.event.start.toLocaleDateString()}<br/>
-                <strong>Time:</strong> ${info.event.extendedProps.time || 'N/A'}<br/>
+                <strong>Event Time:</strong> ${info.event.extendedProps.time || 'N/A'}<br/>
                 <strong>Address:</strong> ${info.event.extendedProps.address || 'N/A'}<br/>
-                <strong>Library Staff Needed:</strong> ${info.event.extendedProps.libStaff || 'N/A'}<br/>
-                <strong>Circulation Staff Needed:</strong> ${info.event.extendedProps.circStaff || 'N/A'}<br/>
+                <strong>Library Staff:</strong> ${info.event.extendedProps.libStaff || 'N/A'}<br/>
+                <strong>Circulation Staff:</strong> ${info.event.extendedProps.circStaff || 'N/A'}<br/>
+                <strong>Event Type:</strong> ${info.event.extendedProps.eventType || 'N/A'}<br/>
                 <strong>Notes:</strong> ${info.event.extendedProps.notes || 'None'}<br/>
-                <strong>Event Type:</strong> ${info.event.extendedProps.type || 'N/A'}<br/>
-                ${info.event.extendedProps.signup ? `<strong>Sign-up:</strong> <a href="${info.event.extendedProps.signup}" target="_blank">Click here</a>` : ''}
+                ${info.event.extendedProps.signupLink ? `
+                  <br/><a href="${info.event.extendedProps.signupLink}" class="signup-link" target="_blank">📋 Sign Up Here</a>
+                ` : ''}
               `;
               modal.style.display = 'block';
             }
           });
 
           calendar.render();
-        });
+        }
+      });
 
       window.onclick = function(event) {
         if (event.target == modal) {
